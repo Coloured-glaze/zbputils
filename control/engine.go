@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"unicode"
+	"unsafe"
 
 	ctrl "github.com/FloatTech/zbpctrl"
 	"github.com/sirupsen/logrus"
@@ -89,6 +90,7 @@ func newengine(service string, prio int, o *ctrl.Options[*zero.Ctx]) (e *enginei
 		},
 		newctrl(service, o),
 	)
+	e.en.UsePostHandler(func(ctx *zero.Ctx) { managers.B.Delete(uintptr(unsafe.Pointer(ctx))) })
 	e.prio = prio
 	e.service = service
 	switch {
@@ -146,11 +148,6 @@ func (e *engineinstance) On(typ string, rules ...zero.Rule) Matcher {
 	return (*matcherinstance)(e.en.On(typ, rules...).SetPriority(e.prio))
 }
 
-// On 添加新的指定消息类型的匹配器(默认Engine)
-func On(typ string, rules ...zero.Rule) Matcher {
-	return (*matcherinstance)(zero.On(typ, rules...))
-}
-
 // OnMessage 消息触发器
 func (e *engineinstance) OnMessage(rules ...zero.Rule) Matcher { return e.On("message", rules...) }
 
@@ -158,10 +155,10 @@ func (e *engineinstance) OnMessage(rules ...zero.Rule) Matcher { return e.On("me
 func (e *engineinstance) OnNotice(rules ...zero.Rule) Matcher { return e.On("notice", rules...) }
 
 // OnRequest 请求消息触发器
-func (e *engineinstance) OnRequest(rules ...zero.Rule) Matcher { return On("request", rules...) }
+func (e *engineinstance) OnRequest(rules ...zero.Rule) Matcher { return e.On("request", rules...) }
 
 // OnMetaEvent 元事件触发器
-func (e *engineinstance) OnMetaEvent(rules ...zero.Rule) Matcher { return On("meta_event", rules...) }
+func (e *engineinstance) OnMetaEvent(rules ...zero.Rule) Matcher { return e.On("meta_event", rules...) }
 
 // OnPrefix 前缀触发器
 func (e *engineinstance) OnPrefix(prefix string, rules ...zero.Rule) Matcher {
